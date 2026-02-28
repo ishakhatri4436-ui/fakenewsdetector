@@ -51,29 +51,37 @@ st.markdown("""
 st.markdown("<div class='title'>🔮 TruthLens AI</div>", unsafe_allow_html=True)
 
 # ---------- LOAD MODEL ----------
-# Make sure you have model.pkl (TF-IDF + LogisticRegression pipeline)
 model = joblib.load("model.pkl")
 
 # ---------- INPUT ----------
 st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-text = st.text_area("📰 Paste News Article Here", height=250, placeholder="Paste real or fake news article...")
+text = st.text_area("📰 Paste News Article Here", height=300, placeholder="Paste real or fake news article...")
 
 if st.button("⚡ Analyze News"):
     if not text.strip():
         st.warning("Please enter news text to analyze!")
     else:
         with st.spinner("Scanning Reality Matrix..."):
-            time.sleep(1.5)  # simulate analysis time
+            time.sleep(1.5)
 
-            # ---------- PREDICTION ----------
-            probs = model.predict_proba([text])[0]
-            fake_prob = probs[0] * 100
-            real_prob = probs[1] * 100
+            # ---------- SPLIT INTO SLIDES / PARAGRAPHS ----------
+            slides = [p.strip() for p in text.split("\n") if p.strip()]
+            if not slides:
+                slides = [text]  # fallback if no line breaks
+
+            slide_probs = []
+            for slide in slides:
+                probs = model.predict_proba([slide])[0]
+                slide_probs.append(probs)
+
+            # ---------- AVERAGE PROBABILITIES ----------
+            avg_fake = sum([p[0] for p in slide_probs]) / len(slide_probs) * 100
+            avg_real = sum([p[1] for p in slide_probs]) / len(slide_probs) * 100
 
             # ---------- GAUGE CHART ----------
             fig = go.Figure(go.Indicator(
                 mode="gauge+number",
-                value=real_prob,
+                value=avg_real,
                 title={'text': "Real News Probability"},
                 gauge={
                     'axis': {'range': [0, 100]},
@@ -90,15 +98,22 @@ if st.button("⚡ Analyze News"):
 
             # ---------- METRICS ----------
             col1, col2 = st.columns(2)
-            col1.metric("Real News %", f"{real_prob:.1f}%")
-            col2.metric("Fake News %", f"{fake_prob:.1f}%")
+            col1.metric("Real News %", f"{avg_real:.1f}%")
+            col2.metric("Fake News %", f"{avg_fake:.1f}%")
 
             # ---------- VERDICT ----------
-            if real_prob > fake_prob:
-                st.success(f"✅ Verdict: Likely REAL news ({real_prob:.1f}%)")
+            if avg_real > avg_fake:
+                st.success(f"✅ Verdict: Likely REAL news ({avg_real:.1f}%)")
                 st.balloons()
             else:
-                st.error(f"🚨 Verdict: Possibly FAKE news ({fake_prob:.1f}%)")
+                st.error(f"🚨 Verdict: Possibly FAKE news ({avg_fake:.1f}%)")
+
+            # ---------- SLIDE-BY-SLIDE ANALYSIS ----------
+            st.markdown("### 📄 Slide Analysis:")
+            for i, probs in enumerate(slide_probs):
+                st.write(f"**Slide {i+1}:** Real {probs[1]*100:.1f}% | Fake {probs[0]*100:.1f}%")
+                st.write(slides[i])
+                st.markdown("---")
 
             # ---------- FUN QUOTE ----------
             quotes = [
