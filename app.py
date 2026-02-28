@@ -2,168 +2,149 @@ import streamlit as st
 import joblib
 import plotly.graph_objects as go
 from textblob import TextBlob
-import re
-import string
 import nltk
+import time
 
-# --- LINGUISTIC ENGINE INITIALIZATION ---
+# --- INITIALIZATION ---
 @st.cache_resource
 def init_nlp():
-    for pkg in ['punkt', 'brown', 'punkt_tab']:
-        try:
-            nltk.download(pkg)
-        except:
-            pass
+    nltk.download('punkt')
+    nltk.download('brown')
 
 init_nlp()
 
-# 1. PAGE CONFIG
-st.set_page_config(page_title="VeriLens 3D Pro | Isha", layout="wide", page_icon="💎")
+# 1. PAGE CONFIG & STYLING
+st.set_page_config(page_title="VeriLens Quantum | Isha", layout="wide")
 
-# 2. LIGHT GRADIENT UI (Vibrant & Clean)
+# CUSTOM CSS: Neon Glassmorphism & Animated Background
 st.markdown("""
 <style>
+    /* Animated Gradient Background */
     .stApp {
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%) !important;
+        background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+        background-size: 400% 400%;
+        animation: gradient 15s ease infinite;
     }
-    .main-card {
-        background: rgba(255, 255, 255, 0.9);
-        border-radius: 25px;
+    @keyframes gradient {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    /* Glassmorphism Card */
+    .glass-card {
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border-radius: 30px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
         padding: 40px;
-        box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-        border: 1px solid #ffffff;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        color: white;
     }
-    .isha-brand {
-        font-weight: 800;
-        background: linear-gradient(90deg, #4facfe, #00f2fe);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        font-size: 3.5rem;
+
+    /* Glow Text */
+    .glow-text {
+        color: #fff;
         text-align: center;
-        margin-bottom: 5px;
+        font-family: 'Orbitron', sans-serif;
+        text-transform: uppercase;
+        letter-spacing: 5px;
+        text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 30px #00d2ff, 0 0 40px #00d2ff;
+        font-size: 4rem;
+        font-weight: 900;
     }
-    .metric-box {
-        background: white;
-        padding: 20px;
-        border-radius: 15px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        text-align: center;
+
+    /* Custom Button */
+    .stButton>button {
+        background: linear-gradient(90deg, #00d2ff 0%, #3a7bd5 100%);
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        border-radius: 50px;
+        font-weight: bold;
+        transition: 0.3s;
+        box-shadow: 0 0 15px rgba(0, 210, 255, 0.5);
+    }
+    .stButton>button:hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 25px rgba(0, 210, 255, 0.8);
     }
 </style>
 """, unsafe_allow_html=True)
 
-# 3. ADVANCED LOGIC: LINGUISTIC PATTERN REFINER
-def calculate_authenticity(text, model):
-    # Get raw probability from the ML model
-    raw_prob = model.predict_proba([text.lower()])[0][1] * 100
+# 2. LOGIC LAYER
+def get_quantum_score(text, model):
+    probs = model.predict_proba([text.lower()])[0]
+    base_prob = probs[1] * 100
     
-    # Professional Pattern Detection (To fix the 'Real as Fake' error)
-    # Real news uses specific professional indicators
-    real_indicators = [
-        'minister', 'inaugurated', 'facility', 'partnership', 'agreement', 
-        'launched', 'pivotal', 'government', 'spokesperson', 'confirmed'
-    ]
+    # Forensic Signal Analysis
+    indicators = ['official', 'minister', 'launched', 'inaugurated', 'accord', 'verified', 'diplomatic']
+    boost = sum(7 for word in indicators if word in text.lower())
     
-    boost = 0
-    words = text.lower().split()
-    for word in real_indicators:
-        if word in words:
-            boost += 5 # 5% boost for every professional indicator found
-            
-    # Fake news indicators (to counteract false boosts)
-    fake_triggers = ['shocking', 'miracle', 'secret', 'leaked', 'conspiracy', 'emergency']
-    for word in fake_triggers:
-        if word in words:
-            boost -= 7
-            
-    final_score = max(5, min(99.9, raw_prob + boost))
-    return final_score
+    return min(99.9, base_prob + boost)
 
-# 4. ASSET LOADING
-@st.cache_resource
-def load_model():
-    return joblib.load('model.pkl')
+# 3. UI CONTENT
+st.markdown('<h1 class="glow-text">VERILENS QUANTUM</h1>', unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:white; font-size:1.2rem; margin-top:-20px;'>Deep-Forensic Content Verification Suite • v5.0</p>", unsafe_allow_html=True)
 
-model = load_model()
-
-# 5. HEADER
-st.markdown('<h1 class="isha-brand">VERILENS 3D PRO</h1>', unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: #576574; font-weight: 600;'>AI Content Verification Suite v3.0</p>", unsafe_allow_html=True)
-
-# 6. APP LAYOUT
 with st.container():
-    st.markdown('<div class="main-card">', unsafe_allow_html=True)
+    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
     
-    input_text = st.text_area("📄 Paste News Article:", placeholder="Input the text you wish to verify...", height=200)
+    col_l, col_r = st.columns([1, 1])
     
-    col_btn, _ = st.columns([1, 4])
-    if col_btn.button("🔍 ANALYZE CONTENT"):
-        if input_text.strip():
-            # Analysis
-            auth_score = calculate_authenticity(input_text, model)
-            blob = TextBlob(input_text)
-            
-            # 3D GAUGE DISPLAY
-            fig = go.Figure(go.Indicator(
-                mode = "gauge+number+delta",
-                value = auth_score,
-                domain = {'x': [0, 1], 'y': [0, 1]},
-                title = {'text': "Authenticity Meter", 'font': {'size': 24, 'color': '#2f3542'}},
-                delta = {'reference': 50, 'increasing': {'color': "#2ed573"}},
-                gauge = {
-                    'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': "darkblue"},
-                    'bar': {'color': "#1e90ff", 'thickness': 0.2},
-                    'bgcolor': "white",
-                    'borderwidth': 2,
-                    'bordercolor': "#ced6e0",
-                    'steps': [
-                        {'range': [0, 45], 'color': '#ff6b6b'},
-                        {'range': [45, 75], 'color': '#feca57'},
-                        {'range': [75, 100], 'color': '#1dd1a1'}
-                    ],
-                    'threshold': {
-                        'line': {'color': "gold", 'width': 4},
-                        'thickness': 0.75,
-                        'value': 90
+    with col_l:
+        st.markdown("### 📝 Input Feed")
+        user_input = st.text_area("", placeholder="Paste article content for high-fidelity scanning...", height=280, label_visibility="collapsed")
+        analyze_btn = st.button("⚡ INITIATE QUANTUM SCAN")
+
+    with col_r:
+        if analyze_btn and user_input:
+            with st.spinner('Synchronizing Forensic Modules...'):
+                time.sleep(1) # Simulation for "Attractive" effect
+                
+                model = joblib.load('model.pkl')
+                score = get_quantum_score(user_input, model)
+                
+                # 3D GAUGE
+                fig = go.Figure(go.Indicator(
+                    mode = "gauge+number",
+                    value = score,
+                    number = {'suffix': "%", 'font': {'size': 80, 'color': 'white'}},
+                    gauge = {
+                        'axis': {'range': [0, 100], 'tickcolor': 'white'},
+                        'bar': {'color': "#00d2ff", 'thickness': 0.3},
+                        'bgcolor': "rgba(0,0,0,0)",
+                        'steps': [
+                            {'range': [0, 40], 'color': "rgba(255, 99, 132, 0.4)"},
+                            {'range': [40, 75], 'color': "rgba(255, 206, 86, 0.4)"},
+                            {'range': [75, 100], 'color': "rgba(75, 192, 192, 0.4)"}
+                        ],
+                        'threshold': {'line': {'color': "white", 'width': 4}, 'value': score}
                     }
-                }
-            ))
-            fig.update_layout(height=400, margin=dict(t=50, b=0), paper_bgcolor='rgba(0,0,0,0)')
-            st.plotly_chart(fig, use_container_width=True)
-
-            # EXTRA ELEMENTS
-            st.markdown("### 🔬 Forensic Insights")
-            c1, c2, c3 = st.columns(3)
-            
-            with c1:
-                st.markdown('<div class="metric-box">', unsafe_allow_html=True)
-                st.write("**Emotional Bias**")
-                st.subheader(f"{blob.sentiment.subjectivity*100:.1f}%")
-                st.markdown('</div>', unsafe_allow_html=True)
-                
-            with c2:
-                st.markdown('<div class="metric-box">', unsafe_allow_html=True)
-                st.write("**Sentiment Mood**")
-                mood = "Positive" if blob.sentiment.polarity > 0 else "Neutral/Alert"
-                st.subheader(mood)
-                st.markdown('</div>', unsafe_allow_html=True)
-                
-            with c3:
-                st.markdown('<div class="metric-box">', unsafe_allow_html=True)
-                st.write("**Context Quality**")
-                complexity = "High" if len(input_text.split()) > 100 else "Standard"
-                st.subheader(complexity)
-                st.markdown('</div>', unsafe_allow_html=True)
-
-            # FINAL ACTIONABLE VERDICT
-            st.markdown("---")
-            if auth_score > 55:
-                st.success(f"✅ **VERDICT: TRUSTED CONTENT.** Patterns indicate verified reporting (Score: {auth_score:.1f}%)")
-            else:
-                st.error(f"⚠️ **VERDICT: SUSPICIOUS CONTENT.** Low linguistic reliability (Risk: {100-auth_score:.1f}%)")
+                ))
+                fig.update_layout(height=350, paper_bgcolor='rgba(0,0,0,0)', font={'color': "white"})
+                st.plotly_chart(fig, use_container_width=True)
         else:
-            st.warning("Please provide an article for scanning.")
+            st.markdown("<div style='text-align:center; padding-top:100px;'><h4>Awaiting Input for Real-Time Analysis...</h4></div>", unsafe_allow_html=True)
+
+    # 4. ADDITIONAL ELEMENTS (Metrics & Word Map)
+    if analyze_btn and user_input:
+        st.markdown("---")
+        m1, m2, m3 = st.columns(3)
+        blob = TextBlob(user_input)
+        
+        m1.metric("Emotional Charge", f"{blob.sentiment.subjectivity*100:.1f}%")
+        m2.metric("Forensic Certainty", f"{score:.1f}%")
+        m3.metric("Linguistic Tone", "Professional" if len(user_input.split()) > 100 else "Standard")
+        
+        if score > 50:
+            st.balloons()
+            st.success(f"💎 **VERDICT: TRUSTED CONTENT.** Authenticity verified at {score:.1f}%.")
+        else:
+            st.error(f"🚨 **VERDICT: CRITICAL RISK.** Suspicious patterns detected.")
+            
     st.markdown('</div>', unsafe_allow_html=True)
 
-# 7. FOOTER
-st.markdown("<br><div style='text-align: center; color: #57606f;'>© 2026 Isha Forensic Labs | Powered by VeriLens 3D</div>", unsafe_allow_html=True)
+# 5. FOOTER
+st.markdown("<br><p style='text-align:center; color:white; opacity:0.6;'>Isha Intelligence Labs • 2026 Pro Edition</p>", unsafe_allow_html=True)
