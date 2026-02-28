@@ -4,19 +4,15 @@ import pandas as pd
 import re
 import plotly.graph_objects as go
 
-# --------------------------------------------------
-# PAGE CONFIG
-# --------------------------------------------------
-st.set_page_config(page_title="VeriLens AI by Isha", layout="wide", page_icon="🔍")
+# 1. PAGE SETUP
+st.set_page_config(page_title="VeriLens AI | Isha", layout="wide", page_icon="🛡️")
 
-# --------------------------------------------------
-# ENHANCED STYLING (Glassmorphism + Animations)
-# --------------------------------------------------
+# 2. ADVANCED CSS (Clean Design)
 st.markdown("""
 <style>
-    /* Animated Gradient Background */
+    /* Gradient Background */
     .stApp {
-        background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+        background: linear-gradient(-45deg, #6a11cb, #2575fc, #00d2ff, #3a7bd5);
         background-size: 400% 400%;
         animation: gradient 15s ease infinite;
     }
@@ -26,116 +22,89 @@ st.markdown("""
         100% { background-position: 0% 50%; }
     }
 
-    /* Glass Effect Card */
-    .main-card {
-        background: rgba(255, 255, 255, 0.25);
-        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
+    /* Hide the top Streamlit menu for a cleaner look */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+
+    /* Modern Glass Card */
+    .glass-card {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(15px);
         border-radius: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.18);
-        padding: 40px;
-        margin-top: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 2rem;
         color: white;
+        margin-bottom: 20px;
     }
 
-    /* Custom Footer for Isha */
-    .footer {
-        position: fixed;
-        left: 0;
-        bottom: 0;
-        width: 100%;
-        background-color: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(5px);
-        color: white;
+    /* Isha's Footer */
+    .isha-footer {
         text-align: center;
-        padding: 10px;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        letter-spacing: 2px;
-    }
-    
-    h1, h2, h3 {
-        color: white !important;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        color: rgba(255,255,255,0.8);
+        padding: 20px;
+        font-weight: 600;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# --------------------------------------------------
-# LOAD MODEL
-# --------------------------------------------------
+# 3. LOAD MODEL
 @st.cache_resource
 def load_model():
     return joblib.load('model.pkl')
 
 model = load_model()
 
-# --------------------------------------------------
-# APP UI
-# --------------------------------------------------
-st.title("🔍 VeriLens AI")
-st.subheader("Smart Fake News Detection System")
+# 4. HEADER
+st.markdown("<h1 style='text-align: center; color: white;'>🛡️ VeriLens AI</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: white; opacity: 0.8;'>Advanced Neural Fact-Checking System</p>", unsafe_allow_html=True)
 
+# 5. MAIN INTERFACE
+# This single container prevents "extra boxes" from appearing
 with st.container():
-    st.markdown("<div class='main-card'>", unsafe_allow_html=True)
+    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
     
-    news_text = st.text_area("Paste the news article text below to analyze its credibility:", height=250)
+    news_input = st.text_area("Analyze News Article", placeholder="Paste article text here...", height=200)
     
-    col_btn, _ = st.columns([1, 3])
-    with col_btn:
-        analyze_btn = st.button("✨ RUN ANALYSIS")
-
-    if analyze_btn:
-        if news_text.strip() == "":
-            st.warning("Please enter some text first!")
-        else:
-            # Predict
-            prediction = model.predict([news_text])[0]
-            probs = model.predict_proba([news_text])[0]
+    if st.button("🚀 VERIFY NOW"):
+        if news_input.strip():
+            # Prediction Logic
+            prediction = model.predict([news_input])[0]
+            probs = model.predict_proba([news_input])[0]
             
-            # 0=Fake, 1=Real
-            prob_fake = probs[0] * 100
-            prob_real = probs[1] * 100
+            # Assuming 0: Fake, 1: Real
+            p_fake, p_real = probs[0] * 100, probs[1] * 100
 
-            # Results Section
-            st.markdown("---")
-            c1, c2 = st.columns(2)
+            # Dashboard Columns
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                fig1 = go.Figure(go.Indicator(
+                    mode="gauge+number", value=p_real,
+                    title={'text': "Credibility Score", 'font': {'color': 'white'}},
+                    gauge={'axis': {'range': [0, 100], 'tickcolor': "white"}, 'bar': {'color': "#00ffcc"}}))
+                fig1.update_layout(paper_bgcolor='rgba(0,0,0,0)', font={'color': "white"}, height=250)
+                st.plotly_chart(fig1, use_container_width=True)
 
-            with c1:
-                fig_real = go.Figure(go.Indicator(
-                    mode="gauge+number",
-                    value=prob_real,
-                    title={'text': "Credibility Score", 'font': {'color': "white"}},
-                    gauge={'axis': {'range': [0, 100], 'tickcolor': "white"},
-                           'bar': {'color': "#00ff88"},
-                           'steps': [{'range': [0, 50], 'color': "rgba(255,0,0,0.1)"}]}
-                ))
-                fig_real.update_layout(paper_bgcolor='rgba(0,0,0,0)', font={'color': "white"})
-                st.plotly_chart(fig_real, use_container_width=True)
+            with col2:
+                fig2 = go.Figure(go.Indicator(
+                    mode="gauge+number", value=p_fake,
+                    title={'text': "Fake Risk", 'font': {'color': 'white'}},
+                    gauge={'axis': {'range': [0, 100], 'tickcolor': "white"}, 'bar': {'color': "#ff3366"}}))
+                fig2.update_layout(paper_bgcolor='rgba(0,0,0,0)', font={'color': "white"}, height=250)
+                st.plotly_chart(fig2, use_container_width=True)
 
-            with c2:
-                fig_fake = go.Figure(go.Indicator(
-                    mode="gauge+number",
-                    value=prob_fake,
-                    title={'text': "Fake Risk Score", 'font': {'color': "white"}},
-                    gauge={'axis': {'range': [0, 100], 'tickcolor': "white"},
-                           'bar': {'color': "#ff3333"}}
-                ))
-                fig_fake.update_layout(paper_bgcolor='rgba(0,0,0,0)', font={'color': "white"})
-                st.plotly_chart(fig_fake, use_container_width=True)
-
-            if prob_real > 50:
-                st.success(f"✅ THIS ARTICLE SEEMS AUTHENTIC")
+            # Final Verdict
+            if p_real > 50:
+                st.success(f"✅ VERDICT: This news appears to be AUTHENTIC.")
             else:
-                st.error(f"⚠️ HIGH RISK: THIS ARTICLE MAY BE FAKE")
-    
-    st.markdown("</div>", unsafe_allow_html=True)
+                st.error(f"⚠️ VERDICT: High probability of MISINFORMATION detected.")
+        else:
+            st.info("Please enter text to begin analysis.")
+            
+    st.markdown('</div>', unsafe_allow_html=True)
 
-# --------------------------------------------------
-# FOOTER WITH YOUR NAME
-# --------------------------------------------------
-st.markdown("""
-    <div class="footer">
-        Developed with ❤️ by <b>ISHA</b> | VeriLens AI © 2026
-    </div>
-""", unsafe_allow_html=True)
+# 6. FOOTER
+st.markdown("<div class='isha-footer'>Developed by Isha ❤️ VeriLens AI 2026</div>", unsafe_allow_html=True)
