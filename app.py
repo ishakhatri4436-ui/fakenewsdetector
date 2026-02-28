@@ -8,122 +8,128 @@ from textblob import TextBlob
 import re
 import string
 
-# 1. PAGE CONFIGURATION
-st.set_page_config(page_title="VeriLens AI | Isha", layout="wide", page_icon="🎨")
+# 1. PAGE SETUP
+st.set_page_config(page_title="VeriLens Forensic | Isha", layout="wide", page_icon="🕵️")
 
-# 2. THE ANALYZER (Cleaning function)
+# 2. THE CLEANER
 def clean_news(text):
     text = text.lower()
     text = re.sub(r'\[.*?\]', '', text)
     text = re.sub(r"\\W"," ",text) 
     text = re.sub(r'https?://\S+|www\.\S+', '', text)
     text = re.sub(r'[%s]' % re.escape(string.punctuation), '', text)
-    text = re.sub(r'\n', '', text)
     return text
 
-# 3. VIBRANT UI CSS
+# 3. COLOURFUL FRONTEND CSS
 st.markdown("""
 <style>
     .stApp { background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%); }
-    
-    .isha-brand {
+    .main-card {
+        background: white;
+        padding: 30px;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        border: 1px solid #eef2f7;
+    }
+    .isha-header {
         font-weight: 900;
-        font-size: 3.5rem;
-        background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
+        background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
+        font-size: 3.5rem;
         text-align: center;
-        margin-bottom: 0px;
     }
-
-    .card {
-        background: white;
-        padding: 2rem;
-        border-radius: 20px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-        border: 1px solid #ffffff;
-    }
-
-    /* Colourful Metric Labels */
-    [data-testid="stMetricLabel"] { font-size: 1.1rem !important; color: #4A5568 !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# 4. LOAD MODEL
+# 4. LOAD ASSETS
 @st.cache_resource
-def load_model():
-    return joblib.load('model.pkl')
+def load_assets():
+    model = joblib.load('model.pkl')
+    return model
 
-model = load_model()
+model = load_assets()
 
-# 5. FRONTEND HEADER
-st.markdown('<h1 class="isha-brand">VERILENS AI</h1>', unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: #718096; margin-bottom: 2rem;'>The Colourful Investigative Suite by Isha</p>", unsafe_allow_html=True)
+# 5. HEADER
+st.markdown('<h1 class="isha-header">VERILENS FORENSIC</h1>', unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #64748b;'>Advanced Content Verification Suite by Isha</p>", unsafe_allow_html=True)
 
-# 6. MAIN TOOLBOX
+# 6. MAIN INTERFACE
 with st.container():
-    st.markdown('<div class="card">', unsafe_allow_html=True)
+    st.markdown('<div class="main-card">', unsafe_allow_html=True)
     
-    input_text = st.text_area("📄 Paste content for deep-dive analysis:", placeholder="Paste here...", height=180)
+    input_text = st.text_area("📄 Paste Article Text", placeholder="Input news content for deep-dive scan...", height=200)
     
-    if st.button("🚀 UNLEASH TOOLS"):
-        if input_text.strip():
-            # Core Logic
-            cleaned = clean_news(input_text)
-            probs = model.predict_proba([cleaned])[0]
-            p_fake, p_real = probs[0] * 100, probs[1] * 100
+    col_run, col_clear = st.columns([1, 5])
+    run_btn = col_run.button("🚀 START SCAN")
+
+    if run_btn and input_text:
+        # DATA LOGIC
+        cleaned = clean_news(input_text)
+        probs = model.predict_proba([cleaned])[0]
+        p_fake, p_real = probs[0] * 100, probs[1] * 100
+        
+        # NLP TOOLS
+        blob = TextBlob(input_text)
+        sentiment = (blob.sentiment.polarity + 1) * 50
+        words = input_text.split()
+        avg_word_len = sum(len(word) for word in words) / len(words) if words else 0
+
+        # RESULTS TABS
+        t1, t2, t3 = st.tabs(["📊 Probability Scan", "🧠 Linguistic DNA", "🏷️ Entity Map"])
+
+        with t1:
+            st.markdown("### Forensic Probability")
+            fig = go.Figure(go.Indicator(
+                mode = "gauge+number",
+                value = p_real,
+                title = {'text': "Authenticity Score (%)", 'font': {'size': 24}},
+                gauge = {
+                    'axis': {'range': [None, 100]},
+                    'bar': {'color': "#2575fc"},
+                    'steps': [
+                        {'range': [0, 40], 'color': "#ff9a9e"},
+                        {'range': [40, 70], 'color': "#f6d365"},
+                        {'range': [70, 100], 'color': "#a1c4fd"}]
+                }
+            ))
+            fig.update_layout(height=350)
+            st.plotly_chart(fig, use_container_width=True)
+
+        with t2:
+            st.markdown("### Writing Style Analysis")
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Emotional Bias", f"{sentiment:.1f}%")
+            c2.metric("Lexical Density", f"{avg_word_len:.1f} chars/word")
+            c3.metric("Complexity", "High" if avg_word_len > 5.5 else "Standard")
             
-            # Sentiment Tool
-            blob = TextBlob(input_text)
-            sentiment = (blob.sentiment.polarity + 1) * 50
-            subjectivity = blob.sentiment.subjectivity * 100
+            # WordCloud
+            wc = WordCloud(background_color="white", colormap="plasma", width=800, height=400).generate(cleaned)
+            fig_wc, ax = plt.subplots()
+            ax.imshow(wc)
+            ax.axis("off")
+            st.pyplot(fig_wc)
 
-            # TOOLBOX TABS
-            tab1, tab2, tab3 = st.tabs(["📊 Forensic Report", "🧠 Linguistic Insights", "🌈 Word Map"])
-
-            with tab1:
-                st.markdown("### Primary Scanner")
-                m1, m2, m3 = st.columns(3)
-                m1.metric("Authenticity", f"{p_real:.1f}%", delta="High" if p_real > 70 else "Low")
-                m2.metric("Emotional Heat", f"{sentiment:.1f}%", delta="Intense" if sentiment > 70 else "Neutral")
-                m3.metric("Bias Level", f"{subjectivity:.1f}%")
-
-                fig = go.Figure(go.Bar(
-                    x=['Fact Signal', 'Fake Signal', 'Sentiment'],
-                    y=[p_real, p_fake, sentiment],
-                    marker=dict(color=['#00dbde', '#fc00ff', '#ff0844'], line=dict(color='white', width=2))
-                ))
-                fig.update_layout(template="plotly_white", height=300, paper_bgcolor='rgba(0,0,0,0)')
-                st.plotly_chart(fig, use_container_width=True)
-
-            with tab2:
-                st.markdown("### Text DNA")
-                words = input_text.split()
-                unique_words = len(set(words))
-                density = (unique_words / len(words)) * 100 if len(words) > 0 else 0
-                
-                c1, c2 = st.columns(2)
-                c1.write(f"**Word Count:** {len(words)}")
-                c1.write(f"**Lexical Diversity:** {density:.1f}%")
-                c2.write(f"**Subjectivity Score:** {subjectivity:.1f}%")
-                c2.write(f"**Reading Ease:** {'Professional' if len(words) > 50 else 'Casual'}")
-
-            with tab3:
-                # Colorful WordCloud
-                wc = WordCloud(background_color="white", width=600, height=300, colormap='spring').generate(cleaned)
-                fig_wc, ax = plt.subplots(facecolor='white')
-                ax.imshow(wc, interpolation='bilinear')
-                ax.axis("off")
-                st.pyplot(fig_wc)
-
-            if p_real > 50:
-                st.balloons()
-                st.success("✨ Verdict: Content appears to be Authentic!")
+        with t3:
+            st.markdown("### Key Subjects Detected")
+            # Simple Entity Extraction via Noun Phrases
+            entities = list(set(blob.noun_phrases))
+            if entities:
+                st.write("The AI identified the following key subjects in this text:")
+                st.write(", ".join(entities[:10]))
             else:
-                st.error("🚨 Warning: Potential Misinformation Detected.")
+                st.write("No distinct named entities detected.")
+
+        # FINAL VERDICT
+        st.markdown("---")
+        if p_real > 50:
+            st.success(f"✅ VERDICT: High probability of AUTHENTICITY ({p_real:.1f}%)")
+            st.info("**Next Step:** This article follows standard reporting patterns. Feel free to use it as a reference.")
         else:
-            st.warning("Please enter text to activate the tools.")
+            st.error(f"⚠️ VERDICT: SUSPICIOUS CONTENT detected ({p_fake:.1f}% Risk)")
+            st.warning("**Action Required:** This text uses patterns common in misinformation. Check for 'Source Attribution' before sharing.")
+
     st.markdown('</div>', unsafe_allow_html=True)
 
 # 7. FOOTER
-st.markdown("<div style='text-align: center; margin-top: 3rem; color: #A0AEC0;'>Designed with ❤️ by <b>ISHA</b> | 2026</div>", unsafe_allow_html=True)
+st.markdown("<br><div style='text-align: center; color: #94a3b8;'>PRO Forensic Suite | Built by Isha ❤️ 2026</div>", unsafe_allow_html=True)
