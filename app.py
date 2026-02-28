@@ -8,7 +8,7 @@ import re
 import string
 import nltk
 
-# --- LINGUISTIC ENGINE FIX ---
+# --- LINGUISTIC ENGINE INITIALIZATION ---
 @st.cache_resource
 def init_nlp():
     for pkg in ['punkt', 'brown', 'punkt_tab']:
@@ -17,121 +17,117 @@ def init_nlp():
 init_nlp()
 
 # 1. PAGE CONFIG
-st.set_page_config(page_title="VeriLens Ultra | Isha", layout="wide", page_icon="💎")
+st.set_page_config(page_title="VeriLens Ultra Pro | Isha", layout="wide", page_icon="🛡️")
 
-# 2. CATCHY FRONTEND (Glassmorphism & Gradients)
+# 2. PREMIUM UI CSS (Glassmorphism + Forensic Dark Mode)
 st.markdown("""
 <style>
-    .stApp { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-    .glass-card {
-        background: rgba(255, 255, 255, 0.9);
-        backdrop-filter: blur(10px);
-        border-radius: 25px;
-        padding: 40px;
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-        margin-bottom: 25px;
+    .stApp { background: #0f172a; color: white; }
+    .forensic-card {
+        background: rgba(30, 41, 59, 0.7);
+        backdrop-filter: blur(12px);
+        border-radius: 20px;
+        padding: 30px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        margin-bottom: 20px;
     }
-    .isha-title {
-        font-weight: 800;
-        color: white;
-        font-size: 4rem;
+    .isha-brand {
+        font-weight: 900;
+        background: linear-gradient(90deg, #38bdf8, #818cf8);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-size: 3rem;
         text-align: center;
-        text-shadow: 2px 2px 10px rgba(0,0,0,0.2);
     }
-    .badge {
-        padding: 5px 15px;
-        border-radius: 50px;
-        font-weight: bold;
-        color: white;
-        margin-right: 10px;
-    }
+    .high-risk { background-color: rgba(239, 68, 68, 0.2); border-left: 5px solid #ef4444; padding: 10px; margin: 5px 0; }
+    .low-risk { background-color: rgba(34, 197, 94, 0.2); border-left: 5px solid #22c55e; padding: 10px; margin: 5px 0; }
 </style>
 """, unsafe_allow_html=True)
 
-# 3. ACCURACY BUFFER (The "2026 Logic" fix)
-def adjust_results(prob_real, text):
-    # Professional 2026 keywords that signify 'Real News' patterns
-    trust_signals = ['micron', 'sanand', 'inaugurated', 'viksit bharat', 'semiconductor', 'infrastructure']
-    bonus = 0
-    for word in trust_signals:
-        if word in text.lower():
-            bonus += 8 # Boost authenticity for verified 2026 topics
-    return min(100, prob_real + bonus)
+# 3. ANALYSIS TOOLS
+def sentence_analysis(text, model):
+    sentences = nltk.sent_tokenize(text)
+    results = []
+    for sent in sentences:
+        prob = model.predict_proba([sent.lower()])[0][1] * 100
+        results.append((sent, prob))
+    return results
 
-# 4. LOAD MODEL
 @st.cache_resource
 def load_assets():
     return joblib.load('model.pkl')
 
 model = load_assets()
 
-# 5. HEADER
-st.markdown('<h1 class="isha-title">VERILENS ULTRA</h1>', unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: #e0e0e0; font-size: 1.2rem;'>By Isha • 2026 Intelligence Edition</p>", unsafe_allow_html=True)
+# 4. HEADER
+st.markdown('<h1 class="isha-brand">VERILENS ULTRA PRO</h1>', unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #94a3b8;'>Engineered by Isha • Advanced News Forensics 2026</p>", unsafe_allow_html=True)
 
-# 6. MAIN APP
+# 5. INPUT SUITE
 with st.container():
-    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+    st.markdown('<div class="forensic-card">', unsafe_allow_html=True)
+    user_text = st.text_area("🔍 Paste Article for Forensic Deep-Scan:", placeholder="Enter full article text...", height=250)
     
-    user_input = st.text_area("", placeholder="Drop your article here...", height=200, label_visibility="collapsed")
-    
-    col_btn, _ = st.columns([1, 4])
-    if col_btn.button("🔥 SCAN NOW"):
-        if user_input.strip():
-            # Analysis
-            blob = TextBlob(user_input)
-            probs = model.predict_proba([user_input.lower()])[0]
+    if st.button("🚀 INITIATE FORENSIC SCAN"):
+        if user_text.strip():
+            # Data Processing
+            blob = TextBlob(user_text)
+            probs = model.predict_proba([user_text.lower()])[0]
+            real_score = probs[1] * 100
             
-            # Apply our 2026 Logic Buffer to stop False Flags
-            final_real_score = adjust_results(probs[1]*100, user_input)
-            
-            # THE RESULTS DASHBOARD
-            st.markdown("### 📈 Verification Intelligence")
-            
-            # Catchy Gauge
-            fig = go.Figure(go.Indicator(
-                mode = "gauge+number+delta",
-                value = final_real_score,
-                delta = {'reference': 50},
-                title = {'text': "Authenticity Meter", 'font': {'size': 20}},
-                gauge = {
-                    'axis': {'range': [0, 100]},
-                    'bar': {'color': "#4facfe"},
-                    'steps': [
-                        {'range': [0, 40], 'color': "#ff5f6d"},
-                        {'range': [40, 70], 'color': "#ffc371"},
-                        {'range': [70, 100], 'color': "#00f2fe"}]
-                }
-            ))
-            fig.update_layout(height=300, paper_bgcolor='rgba(0,0,0,0)', font={'color': "black"})
-            st.plotly_chart(fig, use_container_width=True)
+            # Sentence Heatmap
+            sent_results = sentence_analysis(user_text, model)
 
-            # Linguistic Badges (Catchy Results)
-            st.markdown("#### 🧠 Contextual Signals")
-            sentiment = blob.sentiment.polarity
-            subjectivity = blob.sentiment.subjectivity
-            
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                color = "#2ecc71" if sentiment > 0 else "#e74c3c"
-                st.markdown(f'<div class="badge" style="background:{color}">Mood: {"Positive" if sentiment > 0 else "Urgent/Alert"}</div>', unsafe_allow_html=True)
-            with col2:
-                color = "#3498db" if subjectivity < 0.5 else "#9b59b6"
-                st.markdown(f'<div class="badge" style="background:{color}">Tone: {"Objective" if subjectivity < 0.5 else "Opinionated"}</div>', unsafe_allow_html=True)
-            with col3:
-                st.markdown(f'<div class="badge" style="background:#f1c40f">Density: {len(user_input.split())} Words</div>', unsafe_allow_html=True)
+            # TABS FOR RESULTS
+            t1, t2, t3 = st.tabs(["📊 Forensic Dashboard", "🔬 Sentence Heatmap", "🗂️ Metadata"])
 
-            # FINAL VERDICT BANNER
-            st.markdown("<br>", unsafe_allow_html=True)
-            if final_real_score > 55:
-                st.success(f"🌟 VERDICT: **TRUSTED SOURCE** (Confidence: {final_real_score:.1f}%)")
+            with t1:
+                st.markdown("### Verification Metrics")
+                m1, m2, m3 = st.columns(3)
+                m1.metric("Authenticity", f"{real_score:.1f}%")
+                m2.metric("Bias Intensity", f"{blob.sentiment.subjectivity*100:.1f}%")
+                m3.metric("Linguistic Tone", "Professional" if len(user_text.split()) > 100 else "Casual")
+
+                # Visual Gauge
+                fig = go.Figure(go.Indicator(
+                    mode = "gauge+number", value = real_score,
+                    gauge = {'axis': {'range': [0, 100]}, 'bar': {'color': "#38bdf8"},
+                             'steps': [{'range': [0, 50], 'color': "#1e293b"}, {'range': [50, 100], 'color': "#334155"}]}))
+                fig.update_layout(height=250, paper_bgcolor='rgba(0,0,0,0)', font={'color': "white"})
+                st.plotly_chart(fig, use_container_width=True)
+
+            with t2:
+                st.markdown("### Sentence-Level Risk Analysis")
+                st.write("The AI has broken down the text to find the 'origin' of doubt:")
+                for sent, score in sent_results:
+                    css_class = "low-risk" if score > 50 else "high-risk"
+                    st.markdown(f'<div class="{css_class}"><b>{score:.1f}% Trust:</b> {sent}</div>', unsafe_allow_html=True)
+
+            with t3:
+                st.markdown("### Extracted Entities")
+                entities = list(set(blob.noun_phrases))
+                if entities:
+                    st.write("Identified Key Subjects:")
+                    cols = st.columns(4)
+                    for i, entity in enumerate(entities[:12]):
+                        cols[i % 4].markdown(f"🔹 `{entity.title()}`")
+                
+                # WordCloud for Context
+                wc = WordCloud(background_color="#0f172a", colormap="Blues").generate(user_text)
+                fig_wc, ax = plt.subplots()
+                ax.imshow(wc)
+                ax.axis("off")
+                st.pyplot(fig_wc)
+
+            # FINAL FORENSIC ADVICE
+            st.markdown("---")
+            if real_score > 55:
+                st.success(f"⚖️ **OFFICIAL VERDICT: AUTHENTIC.** This content follows the linguistic patterns of verified 2026 journalism.")
             else:
-                st.error(f"🚩 VERDICT: **SUSPICIOUS SOURCE** (Risk: {100-final_real_score:.1f}%)")
+                st.error(f"⚖️ **OFFICIAL VERDICT: MANIPULATED CONTENT.** This text uses emotional triggers and vague sourcing common in disinformation.")
         else:
-            st.warning("Input empty. Please paste text.")
-
+            st.warning("Please provide text to analyze.")
     st.markdown('</div>', unsafe_allow_html=True)
 
-# 7. FOOTER
-st.markdown("<div style='text-align: center; color: white; opacity: 0.7;'>Proprietary Forensic Suite | Isha Engineered ❤️ 2026</div>", unsafe_allow_html=True)
+# 6. FOOTER
+st.markdown("<div style='text-align: center; color: #475569;'>Proprietary AI Engine v2.4 | Isha Forensic Lab 2026</div>", unsafe_allow_html=True)
