@@ -2,86 +2,101 @@ import streamlit as st
 import joblib
 import plotly.graph_objects as go
 import time
+import random
 
-# --- LOGIC IMPROVEMENTS ---
-def refined_prediction(text, model):
-    # Get base probability
-    probs = model.predict_proba([text.lower()])[0]
-    p_real = probs[1] * 100
-    
-    # "Real News" Logic Buffer: 
-    # Real reporting often contains specific formal markers (names of cities, official titles, dates).
-    # Fake news often lacks these or uses 'clickbait' triggers.
-    formal_markers = ['official', 'spokesperson', 'minister', 'government', 'according to', 'verified', 'confirmed']
-    boost = sum(5 for word in formal_markers if word in text.lower())
-    
-    # Cap result at 99.9%
-    final_score = min(99.9, p_real + boost)
-    return final_score
+st.set_page_config(page_title="TruthLens AI", layout="wide")
 
-# 1. PAGE SETUP
-st.set_page_config(page_title="VeriLens 3D Dashboard", layout="wide")
+# ---------- LIGHT ANIMATED BACKGROUND ----------
+st.markdown("""
+<style>
+.stApp {
+    background: linear-gradient(-45deg, #fdfbfb, #ebedee, #e3f2fd, #fff1f8);
+    background-size: 400% 400%;
+    animation: gradient 12s ease infinite;
+}
+@keyframes gradient {
+    0% {background-position:0% 50%;}
+    50% {background-position:100% 50%;}
+    100% {background-position:0% 50%;}
+}
 
-# 2. TABS (These act as your 'Slides')
-tab1, tab2, tab3 = st.tabs(["🚀 Scanner", "📊 Detailed Report", "ℹ️ How it Works"])
+.glass {
+    background: rgba(255,255,255,0.6);
+    backdrop-filter: blur(15px);
+    padding: 30px;
+    border-radius: 25px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
 
-with tab1:
-    st.markdown("## Content Forensic Scanner")
-    input_text = st.text_area("Paste news article here:", placeholder="Analyze for authenticity...", height=200)
-    
-    if st.button("RUN DEEP SCAN"):
-        if input_text.strip():
-            with st.spinner("Analyzing linguistic structures..."):
-                time.sleep(1) # Visual effect
-                model = joblib.load('model.pkl')
-                score = refined_prediction(input_text, model)
-                
-                # AUTHENTICITY GAUGE
-                fig = go.Figure(go.Indicator(
-                    mode = "gauge+number",
-                    value = score,
-                    number = {'suffix': "%", 'font': {'size': 70, 'color': '#2d3436'}},
-                    title = {'text': "Authenticity Score", 'font': {'size': 24}},
-                    gauge = {
-                        'axis': {'range': [0, 100], 'tickwidth': 1},
-                        'bar': {'color': "#0984e3"},
-                        'steps': [
-                            {'range': [0, 40], 'color': "#ff7675"},
-                            {'range': [40, 70], 'color': "#ffeaa7"},
-                            {'range': [70, 100], 'color': "#55efc4"}
-                        ],
-                    }
-                ))
-                fig.update_layout(height=400)
-                st.plotly_chart(fig, use_container_width=True)
-                
-                # VERDICT
-                if score > 50:
-                    st.success(f"🏆 VERDICT: LIKELY REAL ({score:.1f}% Authenticity)")
-                else:
-                    st.error(f"🚨 VERDICT: HIGH RISK ({100-score:.1f}% Inaccuracy)")
-                
-                # Store data for Tab 2
-                st.session_state['last_score'] = score
-                st.session_state['last_text'] = input_text
+.title {
+    text-align:center;
+    font-size:60px;
+    font-weight:900;
+    color:#3a7bd5;
+    text-shadow:0 0 15px rgba(58,123,213,0.3);
+}
 
-with tab2:
-    st.markdown("## Forensic Report")
-    if 'last_score' in st.session_state:
-        col1, col2 = st.columns(2)
-        col1.metric("Trust Factor", f"{st.session_state['last_score']:.1f}%")
-        col2.metric("Risk Level", "Low" if st.session_state['last_score'] > 50 else "High")
-        
-        st.write("---")
-        st.markdown("### Analysis Summary")
-        st.info("The model analyzed the text for emotional bias and factual markers. The current score suggests the content follows professional reporting standards.")
+.stButton>button {
+    background: linear-gradient(90deg,#ff9a9e,#fad0c4);
+    border:none;
+    padding:12px 25px;
+    border-radius:30px;
+    font-size:18px;
+}
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown("<div class='title'>🔮 TruthLens AI</div>", unsafe_allow_html=True)
+
+model = joblib.load("model.pkl")
+
+st.markdown("<div class='glass'>", unsafe_allow_html=True)
+
+text = st.text_area("📰 Paste News Article", height=250)
+
+if st.button("⚡ Analyze News"):
+    if text.strip() == "":
+        st.warning("Please enter news text")
     else:
-        st.write("Please run a scan in the Scanner tab first!")
+        with st.spinner("Scanning Reality Matrix..."):
+            time.sleep(1.5)
 
-with tab3:
-    st.markdown("## Behind the AI")
-    st.markdown("""
-    * **Linguistic Patterns:** Checks for 'clickbait' vs 'formal' writing.
-    * **Entity Check:** Looks for official citations and verified locations.
-    * **Threshold:** News scoring above 50% is considered reliable.
-    """)
+            probs = model.predict_proba([text])[0]
+            fake_prob = probs[0] * 100
+            real_prob = probs[1] * 100
+
+            # Gauge chart
+            fig = go.Figure(go.Indicator(
+                mode="gauge+number",
+                value=real_prob,
+                title={'text': "Real News Probability"},
+                gauge={
+                    'axis': {'range': [0, 100]},
+                    'steps': [
+                        {'range': [0, 40], 'color': "#ffb3b3"},
+                        {'range': [40, 70], 'color': "#ffe699"},
+                        {'range': [70, 100], 'color': "#b3ffcc"}
+                    ],
+                }
+            ))
+            st.plotly_chart(fig, use_container_width=True)
+
+            col1, col2 = st.columns(2)
+            col1.metric("Real News %", f"{real_prob:.1f}%")
+            col2.metric("Fake News %", f"{fake_prob:.1f}%")
+
+            if real_prob > fake_prob:
+                st.success("✅ Looks like REAL news")
+                st.balloons()
+            else:
+                st.error("🚨 Possibly FAKE news")
+
+            # Fun creativity line
+            quotes = [
+                "Truth is the first casualty of misinformation.",
+                "Always verify before you share.",
+                "AI can help, but humans must think."
+            ]
+            st.info(random.choice(quotes))
+
+st.markdown("</div>", unsafe_allow_html=True)
