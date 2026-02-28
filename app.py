@@ -1,16 +1,16 @@
 import streamlit as st
 import joblib
 import pandas as pd
-import re
 import plotly.graph_objects as go
+from wordcloud import WordCloud
+import matplotlib.pyplot as plt
 
 # 1. PAGE SETUP
-st.set_page_config(page_title="VeriLens AI | Isha", layout="wide", page_icon="🛡️")
+st.set_page_config(page_title="VeriLens AI Pro | Isha", layout="wide", page_icon="🛡️")
 
-# 2. DESIGNER CSS (Glassmorphism + Neon Glow)
+# 2. PRO DESIGNER CSS
 st.markdown("""
 <style>
-    /* Animated Dynamic Background */
     .stApp {
         background: linear-gradient(-45deg, #0f0c29, #302b63, #24243e, #00d2ff);
         background-size: 400% 400%;
@@ -21,52 +21,20 @@ st.markdown("""
         50% { background-position: 100% 50%; }
         100% { background-position: 0% 50%; }
     }
-
-    /* Floating Main Card */
     .main-card {
         background: rgba(255, 255, 255, 0.05);
         backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
         border-radius: 30px;
         border: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 50px;
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
-        margin-top: 20px;
-        animation: float 6s ease-in-out infinite;
-    }
-
-    @keyframes float {
-        0% { transform: translateY(0px); }
-        50% { transform: translateY(-10px); }
-        100% { transform: translateY(0px); }
-    }
-
-    /* Neon Button */
-    div.stButton > button {
-        background: linear-gradient(45deg, #00f2fe 0%, #4facfe 100%);
+        padding: 40px;
         color: white;
-        border: none;
-        padding: 15px 30px;
-        border-radius: 50px;
-        font-weight: bold;
-        box-shadow: 0 0 15px rgba(79, 172, 254, 0.4);
-        transition: 0.3s;
-        width: 100%;
     }
-    div.stButton > button:hover {
-        box-shadow: 0 0 25px rgba(79, 172, 254, 0.8);
-        transform: scale(1.02);
-    }
-
-    /* Footer Style */
-    .isha-footer {
-        position: fixed;
-        bottom: 10px;
-        width: 100%;
+    .feature-box {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 20px;
+        border-radius: 15px;
         text-align: center;
-        color: rgba(255,255,255,0.5);
-        font-size: 14px;
-        letter-spacing: 3px;
+        border: 1px solid rgba(255,255,255,0.1);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -78,53 +46,77 @@ def load_model():
 
 model = load_model()
 
-# 4. HEADER
-st.markdown("<h1 style='text-align: center; color: white; font-size: 60px; font-weight: 800;'>VERILENS <span style='color: #00d2ff;'>AI</span></h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: #a1c4fd; font-size: 20px;'>Trusted Fact-Checking Powered by Neural Intelligence</p>", unsafe_allow_html=True)
+# 4. TITLE SECTION
+st.markdown("<h1 style='text-align: center; color: white;'>🛡️ VERILENS <span style='color: #00d2ff;'>PRO</span></h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #a1c4fd;'>Advanced Forensic Text Analysis by Isha</p>", unsafe_allow_html=True)
 
-# 5. CONTENT
+# 5. INPUT AREA
 with st.container():
     st.markdown('<div class="main-card">', unsafe_allow_html=True)
+    input_text = st.text_area("📄 Input Article for Deep Analysis", placeholder="Paste text here...", height=200)
     
-    # Modern Input Area
-    input_text = st.text_area("📄 News Content Analysis", placeholder="Paste your article here to verify its authenticity...", height=250)
-    
-    # Analyze Button
-    if st.button("✨ ANALYZE CREDIBILITY"):
-        if input_text:
-            # Prediction Logic
-            probs = model.predict_proba([input_text])[0]
-            p_fake, p_real = probs[0] * 100, probs[1] * 100
+    col_btn, col_clear = st.columns([1, 4])
+    analyze = col_btn.button("✨ DEEP SCAN")
 
-            st.markdown("<br>", unsafe_allow_html=True)
-            col1, col2 = st.columns(2)
-            
-            # Gauge Charts
-            with col1:
-                fig1 = go.Figure(go.Indicator(
-                    mode="gauge+number", value=p_real,
-                    gauge={'axis': {'range': [0, 100], 'tickcolor': "white"}, 'bar': {'color': "#00ffcc"}},
-                    title={'text': "Credibility", 'font': {'size': 24, 'color': 'white'}}))
-                fig1.update_layout(paper_bgcolor='rgba(0,0,0,0)', font={'color': "white"}, height=300)
-                st.plotly_chart(fig1, use_container_width=True)
+    if analyze and input_text:
+        # LOGIC
+        probs = model.predict_proba([input_text])[0]
+        p_fake, p_real = probs[0] * 100, probs[1] * 100
+        confidence = max(p_fake, p_real)
 
-            with col2:
-                fig2 = go.Figure(go.Indicator(
-                    mode="gauge+number", value=p_fake,
-                    gauge={'axis': {'range': [0, 100], 'tickcolor': "white"}, 'bar': {'color': "#ff3366"}},
-                    title={'text': "Fake Risk", 'font': {'size': 24, 'color': 'white'}}))
-                fig2.update_layout(paper_bgcolor='rgba(0,0,0,0)', font={'color': "white"}, height=300)
-                st.plotly_chart(fig2, use_container_width=True)
+        # ROW 1: GAUGES
+        st.markdown("### 📊 Primary Indicators")
+        c1, c2, c3 = st.columns([2, 2, 1])
+        
+        with c1:
+            fig1 = go.Figure(go.Indicator(
+                mode="gauge+number", value=p_real,
+                title={'text': "Credibility", 'font': {'color': 'white'}},
+                gauge={'bar': {'color': "#00ffcc"}, 'axis': {'range': [0, 100]}}))
+            fig1.update_layout(paper_bgcolor='rgba(0,0,0,0)', font={'color': "white"}, height=250)
+            st.plotly_chart(fig1, use_container_width=True)
 
-            # Final Verdict Banner
-            if p_real > 50:
-                st.markdown(f"<div style='background: rgba(0,255,204,0.2); padding: 20px; border-radius: 15px; border: 1px solid #00ffcc; text-align: center; color: #00ffcc; font-size: 20px; font-weight: bold;'>✅ VERDICT: LIKELY AUTHENTIC NEWS</div>", unsafe_allow_html=True)
-            else:
-                st.markdown(f"<div style='background: rgba(255,51,102,0.2); padding: 20px; border-radius: 15px; border: 1px solid #ff3366; text-align: center; color: #ff3366; font-size: 20px; font-weight: bold;'>⚠️ VERDICT: POTENTIAL MISINFORMATION</div>", unsafe_allow_html=True)
+        with c2:
+            fig2 = go.Figure(go.Indicator(
+                mode="gauge+number", value=p_fake,
+                title={'text': "Fake Risk", 'font': {'color': 'white'}},
+                gauge={'bar': {'color': "#ff3366"}, 'axis': {'range': [0, 100]}}))
+            fig2.update_layout(paper_bgcolor='rgba(0,0,0,0)', font={'color': "white"}, height=250)
+            st.plotly_chart(fig2, use_container_width=True)
+        
+        with c3:
+            st.markdown("<br><br>", unsafe_allow_html=True)
+            st.metric("AI Confidence", f"{confidence:.1f}%")
+            st.progress(confidence / 100)
+
+        # ROW 2: EXTRA FEATURES
+        st.markdown("---")
+        st.markdown("### 🧠 Deep Insights")
+        feat1, feat2 = st.columns(2)
+
+        with feat1:
+            st.markdown("<div class='feature-box'><strong>🔠 Key Terms Visualized</strong>", unsafe_allow_html=True)
+            wc = WordCloud(background_color=None, mode="RGBA", width=400, height=200, colormap='ice').generate(input_text)
+            st.image(wc.to_array(), use_container_width=True)
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        with feat2:
+            st.markdown("<div class='feature-box'><strong>📝 Text Statistics</strong>", unsafe_allow_html=True)
+            words = len(input_text.split())
+            chars = len(input_text)
+            complexity = "High" if words > 100 else "Low"
+            st.write(f"Word Count: {words}")
+            st.write(f"Character Count: {chars}")
+            st.write(f"Linguistic Complexity: {complexity}")
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        # FINAL VERDICT
+        if p_real > 50:
+            st.success("✅ SCAN COMPLETE: The content appears to be factually consistent.")
         else:
-            st.info("Please enter a news article to start.")
-            
+            st.error("⚠️ SCAN COMPLETE: Highly likely to be misinformation or biased content.")
+
     st.markdown('</div>', unsafe_allow_html=True)
 
-# 6. SIGNATURE FOOTER
-st.markdown("<div class='isha-footer'>ENGINEERED BY ISHA ❤️ 2026</div>", unsafe_allow_html=True)
+# FOOTER
+st.markdown("<br><p style='text-align: center; color: grey;'>PRO VERSION DEVELOPED BY ISHA ❤️ 2026</p>", unsafe_allow_html=True)
