@@ -1,0 +1,10 @@
+VeriLens_3D_Project/
+├── app.py              # The Main Streamlit UI (with tabs/slides)
+├── trainer/            # Folder for model training
+│   ├── trainer.py      # The script to train the AI
+│   └── news_data.csv   # Your dataset (Real and Fake headlines)
+├── assets/             # Folder for images/CSS
+│   └── style.css       # Custom light-gradient styling
+├── requirements.txt    # List of libraries for GitHub/Streamlit
+├── README.md           # Documentation for your GitHub profile
+└── .gitignore          # Tells GitHub to ignore large junk files
