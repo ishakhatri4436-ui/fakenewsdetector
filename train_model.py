@@ -1,17 +1,28 @@
 import pandas as pd
-import joblib
-from sklearn.pipeline import Pipeline
+import pickle
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 
-data = pd.read_csv("news.csv")
+# Load real dataset
+fake = pd.read_csv("data/Fake.csv")
+true = pd.read_csv("data/True.csv")
 
-pipeline = Pipeline([
-    ("tfidf", TfidfVectorizer(stop_words="english")),
-    ("clf", LogisticRegression(max_iter=1000))
-])
+fake['label'] = 'FAKE'
+true['label'] = 'REAL'
 
-pipeline.fit(data["text"], data["label"])
+data = pd.concat([fake, true])
+data = data.sample(frac=1).reset_index(drop=True)
 
-joblib.dump(pipeline, "model.pkl")
-print("New model saved!")
+X = data['text']
+y = data['label']
+
+vectorizer = TfidfVectorizer(stop_words='english', max_df=0.7)
+X_vectorized = vectorizer.fit_transform(X)
+
+model = LogisticRegression(max_iter=1000)
+model.fit(X_vectorized, y)
+
+pickle.dump(model, open("model.pkl", "wb"))
+pickle.dump(vectorizer, open("vectorizer.pkl", "wb"))
+
+print("Model trained successfully!")
