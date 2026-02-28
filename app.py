@@ -4,39 +4,37 @@ import joblib
 import plotly.graph_objects as go
 import time
 import random
+import pandas as pd
 
-st.set_page_config(page_title="TruthLens AI", layout="wide")
+st.set_page_config(page_title="VeriLens Quantum AI", layout="wide")
 
-# ---------- ANIMATED LIGHT BACKGROUND ----------
+# ---------- CREATIVE ANIMATED BACKGROUND ----------
 st.markdown("""
 <style>
 .stApp {
-    background: linear-gradient(-45deg, #fefefe, #f0f8ff, #fffaf0, #f5f5f5);
+    background: linear-gradient(-45deg, #f0f8ff, #e0ffff, #f5f5dc, #faf0e6);
     background-size: 400% 400%;
-    animation: gradient 15s ease infinite;
+    animation: gradient 20s ease infinite;
 }
 @keyframes gradient {
     0% {background-position:0% 50%;}
     50% {background-position:100% 50%;}
     100% {background-position:0% 50%;}
 }
-
 .glass-card {
-    background: rgba(255,255,255,0.6);
-    backdrop-filter: blur(20px);
+    background: rgba(255,255,255,0.5);
+    backdrop-filter: blur(25px);
     padding: 40px;
     border-radius: 25px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.1);
 }
-
 .title {
     text-align:center;
-    font-size:60px;
+    font-size:64px;
     font-weight:900;
     color:#3a7bd5;
-    text-shadow:0 0 15px rgba(58,123,213,0.3);
+    text-shadow:0 0 20px rgba(58,123,213,0.5);
 }
-
 .stButton>button {
     background: linear-gradient(90deg,#ff9a9e,#fad0c4);
     border:none;
@@ -44,38 +42,42 @@ st.markdown("""
     border-radius:30px;
     font-size:18px;
     font-weight:bold;
+    transition:0.3s;
+}
+.stButton>button:hover {
+    transform: scale(1.05);
 }
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown("<div class='title'>🔮 TruthLens AI</div>", unsafe_allow_html=True)
+st.markdown("<div class='title'>🔮 VeriLens Quantum AI</div>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center;color:#333;font-size:18px;'>High-Fidelity Real vs Fake News Detector</p>", unsafe_allow_html=True)
 
 # ---------- LOAD MODEL ----------
-# Make sure model.pkl is a trained TF-IDF + LogisticRegression pipeline
+# Make sure you have a trained TF-IDF + LogisticRegression pipeline saved as model.pkl
 model = joblib.load("model.pkl")
 
 # ---------- INPUT ----------
 st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
 text = st.text_area("📰 Paste News Article Here", height=300, placeholder="Paste real or fake news article...")
 
-if st.button("⚡ Analyze News"):
+if st.button("⚡ Verify News"):
     if not text.strip():
         st.warning("Please enter news text to analyze!")
     else:
-        with st.spinner("Scanning Reality Matrix..."):
+        with st.spinner("Analyzing the news quantum matrix..."):
             time.sleep(1.5)
 
-            # ---------- SPLIT INTO SLIDES / PARAGRAPHS ----------
+            # ---------- SLIDE ANALYSIS ----------
             slides = [p.strip() for p in text.split("\n") if p.strip()]
             if not slides:
-                slides = [text]  # fallback
+                slides = [text]
 
             slide_probs = []
             for slide in slides:
                 probs = model.predict_proba([slide])[0]
                 slide_probs.append(probs)
 
-            # ---------- AVERAGE PROBABILITIES ----------
             avg_fake = sum([p[0] for p in slide_probs]) / len(slide_probs) * 100
             avg_real = sum([p[1] for p in slide_probs]) / len(slide_probs) * 100
 
@@ -85,16 +87,16 @@ if st.button("⚡ Analyze News"):
                 value=avg_real,
                 title={'text': "Real News Probability"},
                 gauge={
-                    'axis': {'range': [0, 100]},
-                    'bar': {'color': "#3a7bd5"},
-                    'steps': [
-                        {'range': [0, 40], 'color': "#ffb3b3"},
-                        {'range': [40, 70], 'color': "#ffe699"},
-                        {'range': [70, 100], 'color': "#b3ffcc"}
+                    'axis': {'range':[0,100]},
+                    'bar': {'color':'#3a7bd5'},
+                    'steps':[
+                        {'range':[0,40], 'color':'#ff9999'},
+                        {'range':[40,70], 'color':'#ffe699'},
+                        {'range':[70,100], 'color':'#b3ffcc'}
                     ],
                 }
             ))
-            fig.update_layout(height=350, paper_bgcolor='rgba(0,0,0,0)', font={'color': "#333"})
+            fig.update_layout(height=350, paper_bgcolor='rgba(0,0,0,0)', font={'color':'#333'})
             st.plotly_chart(fig, use_container_width=True)
 
             # ---------- METRICS ----------
@@ -104,15 +106,16 @@ if st.button("⚡ Analyze News"):
 
             # ---------- VERDICT ----------
             if avg_real > avg_fake:
-                st.success(f"✅ Verdict: Likely REAL news ({avg_real:.1f}%)")
+                st.success(f"✅ Likely REAL news ({avg_real:.1f}%)")
                 st.balloons()
             else:
-                st.error(f"🚨 Verdict: Possibly FAKE news ({avg_fake:.1f}%)")
+                st.error(f"🚨 Possibly FAKE news ({avg_fake:.1f}%)")
 
             # ---------- SLIDE-BY-SLIDE ANALYSIS ----------
-            st.markdown("### 📄 Slide Analysis:")
+            st.markdown("### 📄 Slide-by-Slide Analysis:")
             for i, probs in enumerate(slide_probs):
-                st.write(f"**Slide {i+1}:** Real {probs[1]*100:.1f}% | Fake {probs[0]*100:.1f}%")
+                color = "#3a7bd5" if probs[1]>probs[0] else "#ff4c4c"
+                st.markdown(f"<p style='color:{color};'><b>Slide {i+1}:</b> Real {probs[1]*100:.1f}% | Fake {probs[0]*100:.1f}%</p>", unsafe_allow_html=True)
                 st.write(slides[i])
                 st.markdown("---")
 
@@ -126,6 +129,4 @@ if st.button("⚡ Analyze News"):
             st.info(random.choice(quotes))
 
 st.markdown("</div>", unsafe_allow_html=True)
-
-# ---------- FOOTER ----------
-st.markdown("<p style='text-align:center; color:#666; margin-top:30px;'>TruthLens AI • 2026 • Powered by Isha Intelligence Labs</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center;color:#666;margin-top:30px;'>VeriLens Quantum AI • 2026 • Powered by Isha Intelligence Labs</p>", unsafe_allow_html=True)
