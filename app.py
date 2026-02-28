@@ -51,6 +51,7 @@ st.markdown("""
 st.markdown("<div class='title'>🔮 TruthLens AI</div>", unsafe_allow_html=True)
 
 # ---------- LOAD MODEL ----------
+# Make sure model.pkl is a trained TF-IDF + LogisticRegression pipeline
 model = joblib.load("model.pkl")
 
 # ---------- INPUT ----------
@@ -67,7 +68,7 @@ if st.button("⚡ Analyze News"):
             # ---------- SPLIT INTO SLIDES / PARAGRAPHS ----------
             slides = [p.strip() for p in text.split("\n") if p.strip()]
             if not slides:
-                slides = [text]  # fallback if no line breaks
+                slides = [text]  # fallback
 
             slide_probs = []
             for slide in slides:
